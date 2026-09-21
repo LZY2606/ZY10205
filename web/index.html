@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>参数面去嵌台</title>
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<header class="topbar">
+  <h1>参数面去嵌台</h1>
+  <div class="sub">两端口 S 参数 · 级联 / 反演 / 重归一化 · 复数直角插值 · 逐频点诊断</div>
+  <div id="health" class="health">连接中…</div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · 夹具与口径</h2>
+    <div class="grid4">
+      <label>测量网络（含夹具）
+        <select id="measuredSel"></select>
+      </label>
+      <label>左夹具模型（端口 1 侧）
+        <select id="leftSel"></select>
+      </label>
+      <label>右夹具模型（端口 2 侧）
+        <select id="rightSel"></select>
+      </label>
+      <label>频率对齐策略
+        <select id="strategySel">
+          <option value="measured">以测量网格为准（推荐）</option>
+          <option value="union">三网并集网格</option>
+          <option value="left">对齐到左夹具网格</option>
+          <option value="right">对齐到右夹具网格</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid4">
+      <label>条件数预警
+        <input id="condWarn" type="number" value="100000" step="1000" />
+      </label>
+      <label>条件数失败
+        <input id="condFail" type="number" value="100000000" step="1000000" />
+      </label>
+      <label>回级联容差（相对）
+        <input id="roundtripTol" type="number" value="1e-9" step="1e-10" />
+      </label>
+      <label>DUT 重归一化 z0（欧姆，留空沿用）
+        <input id="targetZ0" type="text" placeholder="如 75,75" />
+      </label>
+    </div>
+    <div class="row">
+      <input id="runName" type="text" placeholder="方案名称，如 A" value="A" />
+      <button id="runBtn" class="primary">去嵌并保存方案</button>
+      <button id="swapBtn" title="同时交换左/右夹具选择">左右对调（端口交换演示）</button>
+    </div>
+    <div id="runMsg" class="msg"></div>
+  </section>
+
+  <section class="card">
+    <h2>2 · 固定 fixture 与导入</h2>
+    <div class="row wrap" id="fixtureChips"></div>
+    <details>
+      <summary>导入 Touchstone（.s2p，RI/MA/DB 均可）</summary>
+      <div class="grid4">
+        <label>名称
+          <input id="impName" type="text" placeholder="my-fixture.s2p" />
+        </label>
+        <label>角色
+          <select id="impRole">
+            <option value="unknown">unknown</option>
+            <option value="left">left</option>
+            <option value="right">right</option>
+            <option value="measured">measured</option>
+            <option value="dut">dut</option>
+          </select>
+        </label>
+        <label class="grow">.s2p 文件
+          <input id="impFile" type="file" accept=".s2p,.snp,.txt" />
+        </label>
+      </div>
+      <textarea id="impText" rows="4" placeholder="或直接粘贴 Touchstone 文本（# GHz S RI R 50 ...）"></textarea>
+      <div class="row">
+        <button id="impBtn">导入</button>
+        <span id="impMsg" class="msg"></span>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>3 · 方案列表与两案对比</h2>
+    <div class="row wrap" id="runList"></div>
+    <div class="grid4">
+      <label>方案 A
+        <select id="cmpA"></select>
+      </label>
+      <label>方案 B
+        <select id="cmpB"></select>
+      </label>
+      <label>对比频点（Hz，精确匹配）
+        <input id="cmpFreq" type="number" value="1000000000" step="10000000" />
+      </label>
+      <label>&nbsp;
+        <button id="cmpBtn">按频点对比</button>
+      </label>
+    </div>
+    <div id="cmpOut" class="mono small"></div>
+  </section>
+
+  <section class="card">
+    <h2>4 · 曲线（Smith / 幅相 / 群时延 / 回验残差）</h2>
+    <div class="row">
+      <label>查看方案
+        <select id="viewSel"></select>
+      </label>
+      <label>曲线对象
+        <select id="viewObj">
+          <option value="dut">去嵌 DUT</option>
+          <option value="rebuilt">回级联（重建测量面）</option>
+        </select>
+      </label>
+      <label>参数
+        <select id="viewKey">
+          <option value="m10">S21</option>
+          <option value="m00">S11</option>
+          <option value="m01">S12</option>
+          <option value="m11">S22</option>
+        </select>
+      </label>
+      <span id="cursor" class="mono small"></span>
+    </div>
+    <div class="charts">
+      <div class="plot"><h3>Smith 圆图（S11）</h3><canvas id="smith" width="420" height="420"></canvas></div>
+      <div class="plot"><h3>幅度 dB / 相位 rad</h3><canvas id="magph" width="560" height="420"></canvas></div>
+      <div class="plot"><h3>群时延 (ns)</h3><canvas id="gd" width="560" height="200"></canvas></div>
+      <div class="plot"><h3>回级联相对残差（逐频点）</h3><canvas id="resid" width="560" height="200"></canvas></div>
+    </div>
+    <h3>逐频点诊断（数值不稳定 / 物理不可行分列；奇异点为 null，不填平）</h3>
+    <div class="tablewrap">
+      <table id="diagTable">
+        <thead>
+          <tr>
+            <th>频率 GHz</th><th>数值状态</th><th>cond(T) 测量</th><th>cond 左</th><th>cond 右</th>
+            <th>外推 L/R</th><th>|S21| DUT</th><th>回验相对残差</th><th>无源性超出</th><th>信息</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>5 · 运行记录导出 / 清空 / 重新导入复核</h2>
+    <div class="row wrap">
+      <button id="exportBtn">导出运行记录 JSON</button>
+      <label class="grow">重放包
+        <input id="reimpFile" type="file" accept="application/json,.json" />
+      </label>
+      <label><input id="reimpWipe" type="checkbox" checked /> 导入前清空数据库</label>
+      <button id="reimpBtn">重新导入并复算</button>
+    </div>
+    <pre id="ioOut" class="mono small"></pre>
+  </section>
+</main>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

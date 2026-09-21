@@ -34,3 +34,8 @@ coverage/
 .vite/
 .turbo/
 *.tsbuildinfo
+
+# 本项目运行时数据库（固定 fixture 在 data/ 下保留 *.s2p，db 可清空重建）
+data/deembed.db
+data/deembed.db-shm
+data/deembed.db-wal

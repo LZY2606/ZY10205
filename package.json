@@ -1,0 +1,22 @@
+{
+  "name": "reference-plane-deembed-bench",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "参数面去嵌台：两端口 S 参数级联、反演、重归一化与频点级诊断",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "tsx server/server.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "gen:fixtures": "tsx scripts/gen-fixtures.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.0"
+  }
+}
