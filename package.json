@@ -1,0 +1,25 @@
+{
+  "name": "parameter-plane-deembed-bench",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "参数面去嵌台：两端口 S 参数级联、反演、重归一化与频点诊断",
+  "scripts": {
+    "dev": "tsx src/server/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/main.js",
+    "test": "vitest",
+    "seed": "tsx scripts/seed.ts",
+    "generate:fixtures": "tsx scripts/generate-fixtures.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

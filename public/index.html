@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>参数面去嵌台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>参数面去嵌台</h1>
+        <p>两端口 S 参数级联、T 反演、功率波重归一化与频点级诊断</p>
+      </div>
+      <div class="actions">
+        <button id="replayButton" type="button">清空并重放固定 fixture</button>
+        <button id="exportButton" type="button">导出运行记录</button>
+        <button id="refreshButton" type="button">刷新数据</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel controls">
+        <h2>去嵌方案</h2>
+        <form id="runForm">
+          <label>测量网络<select id="measurementSelect" name="measurement"></select></label>
+          <label>左夹具模型<select id="leftSelect" name="left"></select></label>
+          <label>右夹具模型<select id="rightSelect" name="right"></select></label>
+          <label>频率对齐
+            <select id="gridSelect" name="grid">
+              <option value="measurement">测量网格</option>
+              <option value="union">并集网格</option>
+              <option value="left">左夹具网格</option>
+              <option value="right">右夹具网格</option>
+            </select>
+          </label>
+          <label>端口1 Z0 (Ω)<input id="z01Re" value="50" inputmode="decimal" /> + <input id="z01Im" value="0" inputmode="decimal" />j</label>
+          <label>端口2 Z0 (Ω)<input id="z02Re" value="50" inputmode="decimal" /> + <input id="z02Im" value="0" inputmode="decimal" />j</label>
+          <label>回验容差<input id="tolerance" value="1e-8" inputmode="decimal" /></label>
+          <label>近奇异 κ<input id="threshold" value="1e6" inputmode="decimal" /></label>
+          <button type="submit">固定口径并执行去嵌</button>
+        </form>
+        <div class="subtle">固定项：端口顺序 1-2、功率波定义 power-wave、每个频点复直角插值。</div>
+      </section>
+
+      <section class="panel">
+        <h2>Touchstone 导入与端口交换</h2>
+        <div class="grid-two">
+          <div>
+            <label>名称<input id="importName" value="imported-network" /></label>
+            <label>类型
+              <select id="importType">
+                <option value="measurement">measurement</option>
+                <option value="fixture-left">fixture-left</option>
+                <option value="fixture-right">fixture-right</option>
+                <option value="dut">dut</option>
+              </select>
+            </label>
+            <textarea id="touchstoneText" rows="7" placeholder="# MHz S RI R 50&#10;40 0 0 0 1 1 0 0 0"></textarea>
+            <button id="importButton" type="button">导入 Touchstone</button>
+          </div>
+          <div>
+            <label>网络<select id="swapSelect"></select></label>
+            <button id="swapButton" type="button">同时交换端口与入射/反射定义</button>
+            <p class="subtle">交换执行 P S P：S11↔S22、S12↔S21，并交换每端口参考阻抗。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel wide">
+        <h2>当前方案</h2>
+        <div id="runSummary" class="summary empty">尚未选择方案。</div>
+        <div class="charts">
+          <figure><figcaption>Smith 轨迹（S11/S22）</figcaption><canvas id="smithCanvas" width="420" height="360"></canvas></figure>
+          <figure><figcaption>S21 幅度 / 相位</figcaption><canvas id="magPhaseCanvas" width="560" height="360"></canvas></figure>
+          <figure><figcaption>S21 群时延</figcaption><canvas id="delayCanvas" width="560" height="300"></canvas></figure>
+          <figure><figcaption>回级联残差</figcaption><canvas id="residualCanvas" width="560" height="300"></canvas></figure>
+        </div>
+      </section>
+
+      <section class="panel wide">
+        <h2>频点诊断</h2>
+        <div class="table-wrap">
+          <table id="diagnosticTable">
+            <thead>
+              <tr><th>频率 MHz</th><th>数值状态</th><th>物理状态</th><th>κ</th><th>残差</th><th>无源裕量</th><th>外推</th><th>诊断</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel wide">
+        <h2>两方案逐频差异</h2>
+        <div class="compare-row">
+          <label>方案 A<select id="baselineRun"></select></label>
+          <label>方案 B<select id="comparisonRun"></select></label>
+          <button id="compareButton" type="button">按共享频点比较</button>
+        </div>
+        <div id="comparisonSummary" class="summary empty">选择两个已保存方案。</div>
+        <div class="table-wrap">
+          <table id="comparisonTable">
+            <thead><tr><th>频率 MHz</th><th>最大复差</th><th>RMS 复差</th><th>S11</th><th>S12</th><th>S21</th><th>S22</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel wide">
+        <h2>运行日志</h2>
+        <pre id="logs"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
